@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run",
+    "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "supabase db push"
   },
   "dependencies": {
