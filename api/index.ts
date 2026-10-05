@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { handle } from "hono/vercel";
 import { ApiError, ERROR_STATUS } from "../src/lib/http.js";
 import { registerPublicRoutes } from "../src/routes/public.js";
 import { registerAuthRoutes } from "../src/routes/auth.js";
@@ -47,4 +46,15 @@ app.onError((err, c) => {
 // scripts/dev-server.ts(로컬 전용)에서 재사용하기 위한 named export. Vercel 빌드에는 영향 없음.
 export { app };
 
-export default handle(app);
+// hono/vercel의 handle()은 deprecated이고, Vercel의 현재 Node.js 런타임은 default export를
+// (req, res) => void 형태의 Node 핸들러로 간주해 Web Fetch Response를 반환하는 함수를 무시한다
+// (응답이 전달되지 않아 타임아웃 발생). 그래서 각 HTTP 메서드를 Web Fetch API 시그니처의
+// named export로 직접 내보낸다 (Vercel 공식 권장 방식).
+function handler(request: Request): Response | Promise<Response> {
+  return app.fetch(request);
+}
+
+export const GET = handler;
+export const POST = handler;
+export const PATCH = handler;
+export const DELETE = handler;
