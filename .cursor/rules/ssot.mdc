@@ -1,0 +1,24 @@
+---
+description: 하나증권 AI 마켓 SSOT 1.2 불변 규칙
+alwaysApply: true
+---
+# 하나증권 AI 마켓 불변 규칙 (SSOT 1.2)
+- 참여자 PII는 닉네임만 저장한다. 이름·사번·부서·이메일 필드/컬럼/로그 추가 금지.
+- participant_id는 참여자 응답에 노출하지 않는다. 화면 식별은 닉네임.
+- 닉네임 중복 판정은 nickname_key, 최종 방어는 DB UNIQUE(23505 → nickname_taken).
+- 복구코드는 평문 저장·로깅 금지. HMAC-SHA256(RECOVERY_PEPPER) 해시만 저장.
+- 투표와 좋아요는 테이블·API·UI 모두 분리한다.
+- 기간·개수·중복·권한 검증은 서버가 최종 판정한다. 프런트 검증은 보조.
+- 모든 테이블 RLS ON + 정책 없음. anon/authenticated 권한 REVOKE.
+- DB/Storage 접근은 서버 코드에서만. 브라우저에 Supabase URL·키를 내려보내지 않는다.
+- SERVICE_ROLE_KEY·DATABASE_URL·RECOVERY_PEPPER는 서버 환경변수로만 사용. NEXT_PUBLIC_ 금지.
+- Supabase Auth 미사용. 세션은 sessions 테이블 + HttpOnly Secure 쿠키(__Host-).
+- 파일은 Storage 서명 URL로만 업로드/다운로드한다. 함수가 파일 본문을 중계하지 않는다(본문 4.5MB 한도).
+- DB 연결은 트랜잭션 풀러(6543), prepare:false. 인스턴스당 max 1.
+- 쓰기 로직은 트랜잭션 안에서 settings 행을 FOR SHARE(조회·판정) / FOR UPDATE(설정 저장)로 잠근다.
+- 시각은 timestamptz 저장, API 응답은 KST ISO(+09:00).
+- 스테이징/운영 Supabase 프로젝트 분리. Preview 배포는 운영 DB에 연결하지 않는다.
+- SSOT에 없는 API·컬럼을 추가하지 않는다. DEC 항목은 구현하지 말고 질문한다.
+- 로고 이미지, 데모 코드, 데모 비밀번호를 운영 번들에 포함하지 않는다.
+
+전체 사양은 `docs/SSOT.md` 참고.
