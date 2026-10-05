@@ -28,9 +28,18 @@ export function env(): Env {
   return cached;
 }
 
+/** host만 비교한다 (checkOrigin은 Origin 헤더에서 new URL(origin).host만 추출해서 비교하므로,
+ *  ALLOWED_ORIGINS에 스킴 포함 전체 URL을 넣어도/안 넣어도 항상 host 기준으로 맞춰준다). */
 export function allowedOrigins(): string[] {
   return env()
     .ALLOWED_ORIGINS.split(",")
     .map((s) => s.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((entry) => {
+      try {
+        return new URL(entry).host;
+      } catch {
+        return entry; // 이미 host만 들어온 경우
+      }
+    });
 }
