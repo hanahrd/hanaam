@@ -49,7 +49,7 @@ async function main() {
         storyTitle3: "지금 바로,\n여러분의 AI 서비스를\n공개해주세요!",
         storyCaption3: "여러분의 새로운 시도를 하나증권 AI 마켓에서 만나고 싶습니다.",
       };
-      await sql`insert into settings (id, payload) values (1, ${JSON.stringify(payload)}::jsonb)`;
+      await sql`insert into settings (id, payload) values (1, ${sql.json(payload)})`;
       console.log("settings 시드 완료. 제출마감:", payload.submissionDeadline);
     } else {
       console.log("settings 행이 이미 있어 건너뜁니다.");

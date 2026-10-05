@@ -44,4 +44,7 @@ app.onError((err, c) => {
   return c.json({ error: "server_error" }, 500);
 });
 
+// scripts/dev-server.ts(로컬 전용)에서 재사용하기 위한 named export. Vercel 빌드에는 영향 없음.
+export { app };
+
 export default handle(app);

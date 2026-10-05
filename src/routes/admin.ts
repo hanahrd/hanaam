@@ -11,7 +11,7 @@ import { enforceRateLimit } from "../lib/rateLimit";
 import { requireAdminSession } from "../auth/middleware";
 
 interface SettingsPayload {
-  [key: string]: unknown;
+  [key: string]: string | number | boolean;
   siteName: string;
   welcome: string;
   description: string;
@@ -110,7 +110,7 @@ export function registerAdminRoutes(app: Hono) {
         if (Number(visibleCount[0]?.count ?? 0) < next.voteCount) fail("not_enough_works");
       }
 
-      await tx`update settings set payload = ${JSON.stringify(next)}::jsonb where id = 1`;
+      await tx`update settings set payload = ${tx.json(next)} where id = 1`;
       await tx`insert into audit (action, detail) values ('운영 설정 변경', '일정 또는 페이지 문구 수정')`;
       result = next;
     });

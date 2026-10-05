@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
+    "dev:local": "tsx --env-file=.env scripts/dev-server.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed": "tsx scripts/seed.ts",
+    "seed": "tsx --env-file=.env scripts/seed.ts",
     "test": "vitest run",
-    "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
     "db:push": "supabase db push"
   },
   "dependencies": {
