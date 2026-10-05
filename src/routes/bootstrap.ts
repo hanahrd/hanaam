@@ -73,6 +73,7 @@ export function registerBootstrapRoutes(app: Hono) {
       filesByWork.set(f.work_id, list);
     }
 
+    // 공개 작품 + 본인이 올린 심사중(비공개) 작품도 함께 보여준다 (SSOT DEC-15: 관리자 승인 전엔 본인·관리자만).
     const rows = await sql<WorkRow[]>`
       select w.id, w.title, w.category, w.tools, w.description, w.participant_id, w.visible, w.deleted,
              w.created, w.views, p.nickname,
@@ -81,11 +82,9 @@ export function registerBootstrapRoutes(app: Hono) {
              exists(select 1 from likes l2 where l2.work_id = w.id and l2.participant_id = ${session.participantId}) as liked
       from works w
       join participants p on p.id = w.participant_id
-      where w.deleted = false and w.visible = true
+      where w.deleted = false and (w.visible = true or w.participant_id = ${session.participantId})
       order by w.created desc
     `;
-
-    const votedRows = await sql<{ exists: boolean }[]>`select exists(select 1 from ballots where participant_id = ${session.participantId}) as exists`;
 
     const works = rows.map((w) => ({
       id: w.id,
@@ -95,9 +94,11 @@ export function registerBootstrapRoutes(app: Hono) {
       description: w.description,
       nickname: w.nickname,
       mine: w.participant_id === session.participantId,
+      visible: w.visible,
       created: toKstIso(w.created),
       views: w.views,
       likes: Number(w.likes),
+      votes: Number(w.votes),
       liked: w.liked,
       files: (filesByWork.get(w.id) ?? []).map((f) => ({ id: f.id, name: f.name, mime: f.mime, size: f.size })),
     }));
@@ -108,7 +109,6 @@ export function registerBootstrapRoutes(app: Hono) {
       serverNow: toKstIso(new Date()),
       csrf: session.csrf,
       works,
-      voted: votedRows[0]?.exists ?? false,
       limits: { maxFile: MAX_FILE, maxTotal: MAX_TOTAL, maxFiles: MAX_FILES },
     });
   });
@@ -156,25 +156,14 @@ export function registerBootstrapRoutes(app: Hono) {
       files: (filesByWork.get(w.id) ?? []).map((f) => ({ id: f.id, name: f.name, mime: f.mime, size: f.size })),
     }));
 
-    const ballots = await sql<{ id: string; nickname: string; created: Date }[]>`
-      select b.id, p.nickname, b.created from ballots b join participants p on p.id = b.participant_id order by b.created desc
-    `;
+    // 투표자는 익명이므로 투표 기록에 닉네임이 없다 — 건수·시각만 집계한다.
+    const ballots = await sql<{ id: string; created: Date }[]>`select id, created from ballots order by created desc`;
 
     const participants = await sql<
-      {
-        id: string;
-        nickname: string;
-        created: Date;
-        uploads: string;
-        voted: boolean;
-        votedAt: Date | null;
-        status: string;
-      }[]
+      { id: string; nickname: string; created: Date; uploads: string; status: string }[]
     >`
       select p.id, p.nickname, p.created,
              (select count(*) from works w where w.participant_id = p.id and w.deleted = false)::text as uploads,
-             exists(select 1 from ballots b where b.participant_id = p.id) as voted,
-             (select b.created from ballots b where b.participant_id = p.id) as "votedAt",
              p.status
       from participants p
       order by p.created desc
@@ -190,14 +179,12 @@ export function registerBootstrapRoutes(app: Hono) {
       serverNow: toKstIso(new Date()),
       csrf: session.csrf,
       works,
-      ballots: ballots.map((b) => ({ id: b.id, nickname: b.nickname, created: toKstIso(b.created) })),
+      ballots: ballots.map((b) => ({ id: b.id, created: toKstIso(b.created) })),
       participants: participants.map((p) => ({
         id: p.id,
         nickname: p.nickname,
         created: toKstIso(p.created),
         uploads: Number(p.uploads),
-        voted: p.voted,
-        votedAt: p.votedAt ? toKstIso(p.votedAt) : null,
         status: p.status,
       })),
       audit: audit.map((a) => ({ action: a.action, detail: a.detail, created: toKstIso(a.created) })),

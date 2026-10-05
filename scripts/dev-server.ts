@@ -48,6 +48,7 @@ function nodeRequestToFetchRequest(req: IncomingMessage, url: URL): Request {
 async function serveStaticFile(pathname: string): Promise<{ status: number; body: Buffer | string; type: string }> {
   let rel = pathname === "/" ? "/index.html" : pathname;
   if (rel.startsWith("/admin") && !extname(rel)) rel = "/admin/index.html";
+  if (rel.startsWith("/vote") && !extname(rel)) rel = "/vote/index.html";
   const safePath = normalize(join(PUBLIC_DIR, rel));
   if (!safePath.startsWith(PUBLIC_DIR)) return { status: 403, body: "Forbidden", type: "text/plain" };
   try {

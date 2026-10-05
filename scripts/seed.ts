@@ -1,6 +1,6 @@
 /**
  * 시드 스크립트 — 로컬/CI에서 1회 실행한다. 이미 행이 있으면 덮어쓰지 않는다 (SSOT 부록 A, 14.3).
- * 실행: npm run seed  (DATABASE_URL, MEMBER_PASSWORD, ADMIN_PASSWORD, RECOVERY_PEPPER 등 .env 필요)
+ * 실행: npm run seed  (DATABASE_URL, ADMIN_PASSWORD 등 .env 필요)
  */
 import postgres from "postgres";
 import { hashPassword } from "../src/lib/password";
@@ -39,7 +39,6 @@ async function main() {
         voteEnd: iso(voteEnd),
         voteCount: 3,
         uploadsEnabled: true,
-        requireApproval: false,
         version: 1,
         storyEnabled: true,
         storyTitle1: "내가 만든 AI 서비스가\n하나증권의 기준이 된다면?",
@@ -57,16 +56,6 @@ async function main() {
 
     const existingCreds = await sql`select role from credentials`;
     const roles = new Set(existingCreds.map((r) => r.role as string));
-
-    const memberPassword = process.env.MEMBER_PASSWORD;
-    if (!roles.has("member")) {
-      if (!memberPassword) throw new Error("MEMBER_PASSWORD 환경변수가 필요합니다.");
-      const { salt, digest } = await hashPassword(memberPassword.trim().toLowerCase());
-      await sql`insert into credentials (role, salt, digest) values ('member', ${salt}, ${digest})`;
-      console.log("참여자 비밀번호 시드 완료.");
-    } else {
-      console.log("member 자격증명이 이미 있어 건너뜁니다.");
-    }
 
     const adminPassword = process.env.ADMIN_PASSWORD;
     if (!roles.has("admin")) {

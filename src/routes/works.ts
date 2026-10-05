@@ -24,7 +24,6 @@ interface SettingsRow {
   voteStart: string;
   voteEnd: string;
   uploadsEnabled: boolean;
-  requireApproval: boolean;
 }
 
 export function registerWorkRoutes(app: Hono) {
@@ -39,7 +38,8 @@ export function registerWorkRoutes(app: Hono) {
 
     const sql = getSql();
     const workId = newWorkId();
-    let pending = false;
+    // 모든 제출물은 관리자 1차 심사(내부정보·기밀 확인) 후 공개로 전환된다. 제작자·관리자만 심사중 작품을 볼 수 있다.
+    const pending = true;
 
     await sql.begin(async (tx) => {
       const settingsRows = await tx<{ payload: SettingsRow }[]>`select payload from settings where id = 1 for share`;
@@ -59,7 +59,6 @@ export function registerWorkRoutes(app: Hono) {
       const total = files.reduce((s, f) => s + Number(f.size), 0);
       if (total > MAX_TOTAL) fail("total_too_large");
 
-      pending = settings.requireApproval === true;
       await tx`insert into works (id, title, category, tools, description, participant_id, visible, deleted)
                 values (${workId}, ${title}, ${category}, ${tools}, ${description}, ${session.participantId}, ${!pending}, false)`;
       await tx`update files set work_id = ${workId} where id = any(${fileIds})`;
@@ -69,28 +68,35 @@ export function registerWorkRoutes(app: Hono) {
     return c.json({ ok: true, id: workId, pending }, 201);
   });
 
-  // GET /api/files/{fileId} — 서명 URL 302 리다이렉트 (SSOT 6.3)
+  // GET /api/files/{fileId} — 서명 URL 302 리다이렉트. 공개 작품은 로그인 없는 투표자도 볼 수 있다 (SSOT 6.3, DEC-15).
   app.get("/api/files/:fileId", async (c) => {
-    let session;
     let isAdmin = false;
+    let participantId: string | null = null;
     try {
-      session = await requireAdminSession(c);
+      await requireAdminSession(c);
       isAdmin = true;
     } catch {
-      session = await requireMemberSession(c);
-      if (!session.participantId) fail("participant_required");
+      try {
+        const session = await requireMemberSession(c);
+        participantId = session.participantId;
+      } catch {
+        // 로그인하지 않은 투표자 — 아래에서 공개 작품만 허용한다.
+      }
     }
 
     const fileId = c.req.param("fileId");
     const sql = getSql();
-    const rows = await sql<{ id: string; name: string; work_id: string | null; visible: boolean | null; deleted: boolean | null }[]>`
-      select f.id, f.name, f.work_id, w.visible, w.deleted
+    const rows = await sql<
+      { id: string; name: string; work_id: string | null; visible: boolean | null; deleted: boolean | null; participant_id: string | null }[]
+    >`
+      select f.id, f.name, f.work_id, w.visible, w.deleted, w.participant_id
       from files f left join works w on w.id = f.work_id
       where f.id = ${fileId} and f.uploaded_at is not null
     `;
     const file = rows[0];
     if (!file || !file.work_id) fail("not_found");
-    if (!isAdmin && (!file.visible || file.deleted)) fail("not_found");
+    const isOwner = participantId !== null && participantId === file.participant_id;
+    if (!isAdmin && !isOwner && (!file.visible || file.deleted)) fail("not_found");
 
     const download = c.req.query("download") === "1";
     const url = await createDownloadUrl(fileId, 60, download ? file.name : undefined);

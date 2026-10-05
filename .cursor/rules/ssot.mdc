@@ -1,18 +1,20 @@
 ---
-description: 하나증권 AI 마켓 SSOT 1.2 불변 규칙
+description: 하나증권 AI 마켓 SSOT 1.3 불변 규칙
 alwaysApply: true
 ---
-# 하나증권 AI 마켓 불변 규칙 (SSOT 1.2)
-- 참여자 PII는 닉네임만 저장한다. 이름·사번·부서·이메일 필드/컬럼/로그 추가 금지.
+# 하나증권 AI 마켓 불변 규칙 (SSOT 1.3)
+- 참여자(제작자) PII는 닉네임만 저장한다. 이름·사번·부서·이메일 필드/컬럼/로그 추가 금지.
 - participant_id는 참여자 응답에 노출하지 않는다. 화면 식별은 닉네임.
 - 닉네임 중복 판정은 nickname_key, 최종 방어는 DB UNIQUE(23505 → nickname_taken).
-- 복구코드는 평문 저장·로깅 금지. HMAC-SHA256(RECOVERY_PEPPER) 해시만 저장.
+- 제작자(업로더) 계정은 관리자가 닉네임+비밀번호로 생성한다. 자가등록·복구코드 기능을 추가하지 않는다. 비밀번호 분실은 관리자의 비밀번호 재설정으로만 처리한다.
+- 투표자(일반사용자)는 로그인 없이 투표한다. 투표 중복 판정은 서버가 발급하는 쿠키 토큰의 해시(voter_token_hash)로만 한다. 투표자 세션·계정·닉네임을 만들지 않는다.
+- 작품은 제출 시 항상 심사중(visible=false)으로 등록된다. 관리자와 작성자 본인만 조회 가능하며, 관리자 승인 후에만 전체 공개로 전환된다. 이 심사 단계를 건너뛰는 설정 토글을 추가하지 않는다.
 - 투표와 좋아요는 테이블·API·UI 모두 분리한다.
 - 기간·개수·중복·권한 검증은 서버가 최종 판정한다. 프런트 검증은 보조.
 - 모든 테이블 RLS ON + 정책 없음. anon/authenticated 권한 REVOKE.
 - DB/Storage 접근은 서버 코드에서만. 브라우저에 Supabase URL·키를 내려보내지 않는다.
-- SERVICE_ROLE_KEY·DATABASE_URL·RECOVERY_PEPPER는 서버 환경변수로만 사용. NEXT_PUBLIC_ 금지.
-- Supabase Auth 미사용. 세션은 sessions 테이블 + HttpOnly Secure 쿠키(__Host-).
+- SERVICE_ROLE_KEY·DATABASE_URL은 서버 환경변수로만 사용. NEXT_PUBLIC_ 금지.
+- Supabase Auth 미사용. 제작자·관리자 세션은 sessions 테이블 + HttpOnly Secure 쿠키(__Host-). 투표자 식별 쿠키도 동일한 쿠키 속성을 쓴다.
 - 파일은 Storage 서명 URL로만 업로드/다운로드한다. 함수가 파일 본문을 중계하지 않는다(본문 4.5MB 한도).
 - DB 연결은 트랜잭션 풀러(6543), prepare:false. 인스턴스당 max 1.
 - 쓰기 로직은 트랜잭션 안에서 settings 행을 FOR SHARE(조회·판정) / FOR UPDATE(설정 저장)로 잠근다.

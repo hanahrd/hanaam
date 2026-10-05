@@ -5,8 +5,8 @@ import { fail, isUniqueViolation } from "../lib/http.js";
 import { computePhase, isValidIsoDate, toKstIso } from "../lib/phase.js";
 import { toCsv } from "../lib/csv.js";
 import { nicknameKey, normalizeNickname, validateNicknameFormat } from "../lib/nickname.js";
-import { formatRecoveryCode, generateRecoveryCode, recoveryDigest } from "../lib/recovery.js";
-import { hashPassword, normalizeAdminPassword, normalizeMemberPassword, verifyPassword } from "../lib/password.js";
+import { newParticipantId } from "../lib/ids.js";
+import { hashPassword, normalizeAdminPassword, verifyPassword } from "../lib/password.js";
 import { enforceRateLimit } from "../lib/rateLimit.js";
 import { requireAdminSession } from "../auth/middleware.js";
 
@@ -22,7 +22,6 @@ interface SettingsPayload {
   voteEnd: string;
   voteCount: number;
   uploadsEnabled: boolean;
-  requireApproval: boolean;
   version: number;
   storyEnabled: boolean;
   storyTitle1: string;
@@ -46,7 +45,6 @@ const settingsPatchSchema = z
     voteEnd: z.string().optional(),
     voteCount: z.number().int().min(1).max(20).optional(),
     uploadsEnabled: z.boolean().optional(),
-    requireApproval: z.boolean().optional(),
     storyEnabled: z.boolean().optional(),
     storyTitle1: z.string().min(1).max(140).optional(),
     storyTitle2: z.string().min(1).max(140).optional(),
@@ -59,13 +57,19 @@ const settingsPatchSchema = z
 
 const workActionSchema = z.object({ action: z.enum(["show", "hide", "delete"]) });
 const participantActionSchema = z.object({
-  action: z.enum(["rename", "reset_recovery", "block", "unblock"]),
+  action: z.enum(["rename", "reset_password", "block", "unblock"]),
   nickname: z.string().min(1).max(40).optional(),
+  newPassword: z.string().min(4).max(128).optional(),
 });
 const passwordSchema = z.object({
-  role: z.enum(["member", "admin"]),
   currentAdminPassword: z.string().min(1),
   newPassword: z.string().min(10).max(128),
+});
+const createParticipantsSchema = z.object({
+  accounts: z
+    .array(z.object({ nickname: z.string().min(1).max(40), password: z.string().min(4).max(128) }))
+    .min(1)
+    .max(300),
 });
 
 export function registerAdminRoutes(app: Hono) {
@@ -156,6 +160,44 @@ export function registerAdminRoutes(app: Hono) {
     return c.json({ ok: true });
   });
 
+  // POST /api/admin/participants — 제작자(업로더) 계정 일괄 생성. 자가등록은 폐지되었다.
+  app.post("/api/admin/participants", async (c) => {
+    await requireAdminSession(c);
+    const body = createParticipantsSchema.safeParse(await c.req.json().catch(() => ({})));
+    if (!body.success) fail("invalid_input");
+
+    const sql = getSql();
+    const created: string[] = [];
+    const failed: { nickname: string; reason: string }[] = [];
+
+    for (const account of body.data.accounts) {
+      const nickname = normalizeNickname(account.nickname);
+      const format = validateNicknameFormat(nickname);
+      if (!format.ok) {
+        failed.push({ nickname: account.nickname, reason: format.reason });
+        continue;
+      }
+      const key = nicknameKey(nickname);
+      const id = newParticipantId();
+      const { salt, digest } = await hashPassword(account.password.trim());
+      try {
+        await sql`insert into participants (id, nickname, nickname_key, password_salt, password_digest)
+                  values (${id}, ${nickname}, ${key}, ${salt}, ${digest})`;
+        created.push(nickname);
+      } catch (err) {
+        if (isUniqueViolation(err)) {
+          failed.push({ nickname: account.nickname, reason: "nickname_taken" });
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (created.length) {
+      await sql`insert into audit (action, detail) values ('제작자 계정 생성', ${created.length + "건: " + created.join(", ")})`;
+    }
+    return c.json({ ok: true, created, failed }, 201);
+  });
+
   // PATCH /api/admin/participants/{participantId}
   app.patch("/api/admin/participants/:participantId", async (c) => {
     await requireAdminSession(c);
@@ -184,12 +226,13 @@ export function registerAdminRoutes(app: Hono) {
       return c.json({ ok: true });
     }
 
-    if (body.data.action === "reset_recovery") {
-      const code = generateRecoveryCode();
-      const digest = recoveryDigest(code);
-      await sql`update participants set recovery_digest = ${digest} where id = ${participantId}`;
-      await sql`insert into audit (action, detail) values ('복구코드 재발급', ${participant.nickname})`;
-      return c.json({ ok: true, recoveryCode: formatRecoveryCode(code) });
+    if (body.data.action === "reset_password") {
+      if (!body.data.newPassword) fail("invalid_input");
+      const { salt, digest } = await hashPassword(body.data.newPassword.trim());
+      await sql`update participants set password_salt = ${salt}, password_digest = ${digest} where id = ${participantId}`;
+      await sql`delete from sessions where role = 'member' and participant_id = ${participantId}`;
+      await sql`insert into audit (action, detail) values ('제작자 비밀번호 재설정', ${participant.nickname})`;
+      return c.json({ ok: true });
     }
 
     if (body.data.action === "block") {
@@ -218,15 +261,11 @@ export function registerAdminRoutes(app: Hono) {
     const ok = await verifyPassword(normalizeAdminPassword(body.data.currentAdminPassword), cred.salt, cred.digest);
     if (!ok) fail("wrong_password");
 
-    const normalized = body.data.role === "member" ? normalizeMemberPassword(body.data.newPassword) : normalizeAdminPassword(body.data.newPassword);
+    const normalized = normalizeAdminPassword(body.data.newPassword);
     const { salt, digest } = await hashPassword(normalized);
-    await sql`update credentials set salt = ${salt}, digest = ${digest} where role = ${body.data.role}`;
-    if (body.data.role === "member") {
-      await sql`delete from sessions where role = 'member'`;
-    } else {
-      await sql`delete from sessions where role = 'admin' and token_hash != ${session.tokenHash}`;
-    }
-    await sql`insert into audit (action, detail) values ('접속 비밀번호 변경', ${body.data.role})`;
+    await sql`update credentials set salt = ${salt}, digest = ${digest} where role = 'admin'`;
+    await sql`delete from sessions where role = 'admin' and token_hash != ${session.tokenHash}`;
+    await sql`insert into audit (action, detail) values ('관리자 비밀번호 변경', '')`;
     return c.json({ ok: true });
   });
 
@@ -234,18 +273,14 @@ export function registerAdminRoutes(app: Hono) {
   app.get("/api/admin/export/participants", async (c) => {
     await requireAdminSession(c);
     const sql = getSql();
-    const rows = await sql<
-      { nickname: string; created: Date; uploads: string; voted: boolean; votedAt: Date | null; status: string }[]
-    >`
+    const rows = await sql<{ nickname: string; created: Date; uploads: string; status: string }[]>`
       select p.nickname, p.created,
              (select count(*) from works w where w.participant_id = p.id and w.deleted = false)::text as uploads,
-             exists(select 1 from ballots b where b.participant_id = p.id) as voted,
-             (select b.created from ballots b where b.participant_id = p.id) as "votedAt",
              p.status
       from participants p order by p.created desc
     `;
-    const header = ["닉네임", "가입일시(KST)", "제출 수", "투표 여부", "투표일시(KST)", "상태"];
-    const body = rows.map((r) => [r.nickname, toKstIso(r.created), r.uploads, r.voted ? "완료" : "미참여", r.votedAt ? toKstIso(r.votedAt) : "", r.status]);
+    const header = ["닉네임", "계정 생성일시(KST)", "제출 수", "상태"];
+    const body = rows.map((r) => [r.nickname, toKstIso(r.created), r.uploads, r.status]);
     const csv = toCsv([header, ...body]);
     c.header("Content-Type", "text/csv; charset=utf-8");
     c.header("Content-Disposition", 'attachment; filename="participants.csv"');

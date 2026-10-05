@@ -7,6 +7,7 @@ import { registerBootstrapRoutes } from "../src/routes/bootstrap.js";
 import { registerUploadRoutes } from "../src/routes/uploads.js";
 import { registerWorkRoutes } from "../src/routes/works.js";
 import { registerVoteRoutes } from "../src/routes/votes.js";
+import { registerVotePublicRoutes } from "../src/routes/votePublic.js";
 import { registerAdminRoutes } from "../src/routes/admin.js";
 import { registerCronRoutes } from "../src/routes/cron.js";
 
@@ -30,6 +31,7 @@ registerBootstrapRoutes(app);
 registerUploadRoutes(app);
 registerWorkRoutes(app);
 registerVoteRoutes(app);
+registerVotePublicRoutes(app);
 registerAdminRoutes(app);
 registerCronRoutes(app);
 

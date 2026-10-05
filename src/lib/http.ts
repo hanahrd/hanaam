@@ -20,14 +20,11 @@ export const ERROR_STATUS: Record<string, number> = {
   nickname_invalid: 400,
   nickname_reserved: 400,
   nickname_taken: 409,
-  recovery_invalid: 401,
-  already_registered: 409,
   invalid_dates: 400,
   date_order: 400,
   invalid_count: 400,
   selection_count: 400,
   invalid_selection: 400,
-  self_vote: 400,
   consent_required: 400,
   submissions_closed: 409,
   voting_closed: 409,
@@ -55,7 +52,7 @@ export function fail(code: string): never {
 /** Postgres UNIQUE 위반(23505)을 제약 이름으로 구분해 공개 에러 코드로 바꾼다. */
 export function failFromConstraint(constraintName: string | undefined): never {
   if (constraintName === "participants_nickname_key_uq") fail("nickname_taken");
-  if (constraintName === "ballots_participant_uq") fail("already_voted");
+  if (constraintName === "ballots_voter_token_hash_key") fail("already_voted");
   fail("server_error");
 }
 

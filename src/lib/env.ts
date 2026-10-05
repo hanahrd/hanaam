@@ -5,9 +5,7 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL 필요"),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  MEMBER_PASSWORD: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
-  RECOVERY_PEPPER: z.string().min(16, "RECOVERY_PEPPER는 32바이트 이상 권장"),
   CRON_SECRET: z.string().min(1),
   ALLOWED_ORIGINS: z.string().min(1),
 });
