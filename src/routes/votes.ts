@@ -1,11 +1,11 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { getSql } from "../db/client";
-import { fail, isUniqueViolation } from "../lib/http";
-import { newBallotId } from "../lib/ids";
-import { computePhase } from "../lib/phase";
-import { enforceRateLimit } from "../lib/rateLimit";
-import { requireParticipant } from "../auth/middleware";
+import { getSql } from "../db/client.js";
+import { fail, isUniqueViolation } from "../lib/http.js";
+import { newBallotId } from "../lib/ids.js";
+import { computePhase } from "../lib/phase.js";
+import { enforceRateLimit } from "../lib/rateLimit.js";
+import { requireParticipant } from "../auth/middleware.js";
 
 const voteSchema = z.object({
   workIds: z.array(z.string()).min(1).max(20),

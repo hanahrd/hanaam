@@ -1,8 +1,8 @@
 import type { Context } from "hono";
-import { allowedOrigins } from "../lib/env";
-import { fail } from "../lib/http";
-import { getSql } from "../db/client";
-import { cookieNameFor, getSession, parseCookies, type Role, type SessionInfo } from "./session";
+import { allowedOrigins } from "../lib/env.js";
+import { fail } from "../lib/http.js";
+import { getSql } from "../db/client.js";
+import { cookieNameFor, getSession, parseCookies, type Role, type SessionInfo } from "./session.js";
 
 const MUTATING_METHODS = new Set(["POST", "PATCH", "DELETE", "PUT"]);
 

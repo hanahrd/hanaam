@@ -1,7 +1,7 @@
 {
   "regions": ["icn1"],
   "functions": {
-    "api/**": { "maxDuration": 30 }
+    "api/index.ts": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" },

@@ -1,13 +1,13 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { getSql } from "../db/client";
-import { fail, isUniqueViolation } from "../lib/http";
-import { newParticipantId } from "../lib/ids";
-import { nicknameKey, normalizeNickname, validateNicknameFormat } from "../lib/nickname";
-import { formatRecoveryCode, generateRecoveryCode, recoveryDigest, verifyRecoveryCode } from "../lib/recovery";
-import { clientIp, enforceRateLimit, hashFingerprint, underRateLimit, recordAttempt } from "../lib/rateLimit";
-import { requireMemberSession } from "../auth/middleware";
-import { attachParticipant } from "../auth/session";
+import { getSql } from "../db/client.js";
+import { fail, isUniqueViolation } from "../lib/http.js";
+import { newParticipantId } from "../lib/ids.js";
+import { nicknameKey, normalizeNickname, validateNicknameFormat } from "../lib/nickname.js";
+import { formatRecoveryCode, generateRecoveryCode, recoveryDigest, verifyRecoveryCode } from "../lib/recovery.js";
+import { clientIp, enforceRateLimit, hashFingerprint, underRateLimit, recordAttempt } from "../lib/rateLimit.js";
+import { requireMemberSession } from "../auth/middleware.js";
+import { attachParticipant } from "../auth/session.js";
 
 const nicknameSchema = z.object({ nickname: z.string().min(1).max(40) });
 const recoverSchema = z.object({ nickname: z.string().min(1).max(40), recoveryCode: z.string().min(1).max(40) });

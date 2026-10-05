@@ -1,8 +1,8 @@
 import type { Hono } from "hono";
-import { getSql } from "../db/client";
-import { env } from "../lib/env";
-import { fail } from "../lib/http";
-import { removeObject } from "../storage";
+import { getSql } from "../db/client.js";
+import { env } from "../lib/env.js";
+import { fail } from "../lib/http.js";
+import { removeObject } from "../storage/index.js";
 
 export function registerCronRoutes(app: Hono) {
   // GET /api/cron/cleanup — Vercel Cron 전용, 공개 계약 아님 (SSOT 9.2, 11.1)

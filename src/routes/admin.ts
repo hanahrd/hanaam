@@ -1,14 +1,14 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { getSql } from "../db/client";
-import { fail, isUniqueViolation } from "../lib/http";
-import { computePhase, isValidIsoDate, toKstIso } from "../lib/phase";
-import { toCsv } from "../lib/csv";
-import { nicknameKey, normalizeNickname, validateNicknameFormat } from "../lib/nickname";
-import { formatRecoveryCode, generateRecoveryCode, recoveryDigest } from "../lib/recovery";
-import { hashPassword, normalizeAdminPassword, normalizeMemberPassword, verifyPassword } from "../lib/password";
-import { enforceRateLimit } from "../lib/rateLimit";
-import { requireAdminSession } from "../auth/middleware";
+import { getSql } from "../db/client.js";
+import { fail, isUniqueViolation } from "../lib/http.js";
+import { computePhase, isValidIsoDate, toKstIso } from "../lib/phase.js";
+import { toCsv } from "../lib/csv.js";
+import { nicknameKey, normalizeNickname, validateNicknameFormat } from "../lib/nickname.js";
+import { formatRecoveryCode, generateRecoveryCode, recoveryDigest } from "../lib/recovery.js";
+import { hashPassword, normalizeAdminPassword, normalizeMemberPassword, verifyPassword } from "../lib/password.js";
+import { enforceRateLimit } from "../lib/rateLimit.js";
+import { requireAdminSession } from "../auth/middleware.js";
 
 interface SettingsPayload {
   [key: string]: string | number | boolean;

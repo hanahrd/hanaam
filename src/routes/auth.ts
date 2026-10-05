@@ -1,11 +1,11 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { getSql } from "../db/client";
-import { fail } from "../lib/http";
-import { normalizeAdminPassword, normalizeMemberPassword, verifyPassword } from "../lib/password";
-import { clientIp, enforceRateLimit, hashFingerprint } from "../lib/rateLimit";
-import { checkOrigin, checkCsrf, readSessionToken } from "../auth/middleware";
-import { clearCookieHeader, createSession, destroySession, getSession, setCookieHeader } from "../auth/session";
+import { getSql } from "../db/client.js";
+import { fail } from "../lib/http.js";
+import { normalizeAdminPassword, normalizeMemberPassword, verifyPassword } from "../lib/password.js";
+import { clientIp, enforceRateLimit, hashFingerprint } from "../lib/rateLimit.js";
+import { checkOrigin, checkCsrf, readSessionToken } from "../auth/middleware.js";
+import { clearCookieHeader, createSession, destroySession, getSession, setCookieHeader } from "../auth/session.js";
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) });
 

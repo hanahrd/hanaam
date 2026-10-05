@@ -1,15 +1,15 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
-import { ApiError, ERROR_STATUS } from "../src/lib/http";
-import { registerPublicRoutes } from "../src/routes/public";
-import { registerAuthRoutes } from "../src/routes/auth";
-import { registerParticipantRoutes } from "../src/routes/participants";
-import { registerBootstrapRoutes } from "../src/routes/bootstrap";
-import { registerUploadRoutes } from "../src/routes/uploads";
-import { registerWorkRoutes } from "../src/routes/works";
-import { registerVoteRoutes } from "../src/routes/votes";
-import { registerAdminRoutes } from "../src/routes/admin";
-import { registerCronRoutes } from "../src/routes/cron";
+import { ApiError, ERROR_STATUS } from "../src/lib/http.js";
+import { registerPublicRoutes } from "../src/routes/public.js";
+import { registerAuthRoutes } from "../src/routes/auth.js";
+import { registerParticipantRoutes } from "../src/routes/participants.js";
+import { registerBootstrapRoutes } from "../src/routes/bootstrap.js";
+import { registerUploadRoutes } from "../src/routes/uploads.js";
+import { registerWorkRoutes } from "../src/routes/works.js";
+import { registerVoteRoutes } from "../src/routes/votes.js";
+import { registerAdminRoutes } from "../src/routes/admin.js";
+import { registerCronRoutes } from "../src/routes/cron.js";
 
 // Node.js 런타임 (Edge 아님) — pg/postgres.js, crypto.pbkdf2, Supabase SDK가 안정적으로 동작한다 (SSOT 9.1).
 export const config = { runtime: "nodejs" };

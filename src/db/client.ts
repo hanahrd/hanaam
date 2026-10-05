@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { env } from "../lib/env";
+import { env } from "../lib/env.js";
 
 declare global {
   // eslint-disable-next-line no-var

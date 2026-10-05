@@ -1,11 +1,11 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { getSql } from "../db/client";
-import { fail, isUniqueViolation } from "../lib/http";
-import { newWorkId } from "../lib/ids";
-import { computePhase } from "../lib/phase";
-import { createDownloadUrl } from "../storage";
-import { requireAdminSession, requireMemberSession, requireParticipant } from "../auth/middleware";
+import { getSql } from "../db/client.js";
+import { fail, isUniqueViolation } from "../lib/http.js";
+import { newWorkId } from "../lib/ids.js";
+import { computePhase } from "../lib/phase.js";
+import { createDownloadUrl } from "../storage/index.js";
+import { requireAdminSession, requireMemberSession, requireParticipant } from "../auth/middleware.js";
 
 const CATEGORIES = ["PPT", "이미지", "영상", "업무자동화", "기타"] as const;
 const MAX_TOTAL = 100 * 1024 * 1024;

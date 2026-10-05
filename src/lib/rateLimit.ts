@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getSql } from "../db/client";
+import { getSql } from "../db/client.js";
 
 /** Vercel이 덮어쓰는 클라이언트 IP 헤더만 신뢰한다 (SSOT 9.2). */
 export function clientIp(headers: Headers): string {
@@ -34,7 +34,7 @@ export async function recordAttempt(fingerprint: string, bucket: string): Promis
 export async function enforceRateLimit(fingerprint: string, bucket: string, limit: number, windowMinutes: number): Promise<void> {
   const ok = await underRateLimit(fingerprint, bucket, limit, windowMinutes);
   if (!ok) {
-    const { fail } = await import("./http");
+    const { fail } = await import("./http.js");
     fail("too_many_requests");
   }
   await recordAttempt(fingerprint, bucket);

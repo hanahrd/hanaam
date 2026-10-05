@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { env } from "./env";
+import { env } from "./env.js";
 
 // Crockford Base32 (I, L, O, U 제외) — SSOT 2.4
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";

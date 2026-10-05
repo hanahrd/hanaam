@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { getSql } from "../db/client";
+import { getSql } from "../db/client.js";
 
 export type Role = "member" | "admin";
 

@@ -1,13 +1,13 @@
 import type { Hono } from "hono";
 import { z } from "zod";
-import { getSql } from "../db/client";
-import { fail } from "../lib/http";
-import { newFileId } from "../lib/ids";
-import { EXT_MIME, mimeFromName, verifySignature } from "../lib/fileSignature";
-import { computePhase } from "../lib/phase";
-import { enforceRateLimit } from "../lib/rateLimit";
-import { createUploadUrl, getObjectSize, readObjectHead, removeObject } from "../storage";
-import { requireParticipant } from "../auth/middleware";
+import { getSql } from "../db/client.js";
+import { fail } from "../lib/http.js";
+import { newFileId } from "../lib/ids.js";
+import { EXT_MIME, mimeFromName, verifySignature } from "../lib/fileSignature.js";
+import { computePhase } from "../lib/phase.js";
+import { enforceRateLimit } from "../lib/rateLimit.js";
+import { createUploadUrl, getObjectSize, readObjectHead, removeObject } from "../storage/index.js";
+import { requireParticipant } from "../auth/middleware.js";
 
 const uploadSchema = z.object({ name: z.string().min(1).max(255), size: z.number().int().positive() });
 const MAX_FILE = 50 * 1024 * 1024;

@@ -1,8 +1,8 @@
 import type { Hono } from "hono";
-import { getSql } from "../db/client";
-import { computePhase, toKstIso } from "../lib/phase";
-import { requireAdminSession, requireMemberSession } from "../auth/middleware";
-import { fail } from "../lib/http";
+import { getSql } from "../db/client.js";
+import { computePhase, toKstIso } from "../lib/phase.js";
+import { requireAdminSession, requireMemberSession } from "../auth/middleware.js";
+import { fail } from "../lib/http.js";
 
 const MAX_FILE = 50 * 1024 * 1024;
 const MAX_TOTAL = 100 * 1024 * 1024;

@@ -1,5 +1,5 @@
 import type { Hono } from "hono";
-import { getSql } from "../db/client";
+import { getSql } from "../db/client.js";
 
 interface SettingsPayload {
   siteName: string;
